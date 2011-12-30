@@ -67,6 +67,19 @@ describe('Dependent Observable', {
         value_of(invokedWriteWithArgs[2]).should_be(["third1", "third2"]);
         value_of(invokedWriteWithThis).should_be(someOwner);
     },
+
+    'Should use the second arg (evaluatorFunctionTarget) for "this" when calling read/write if no options.owner was given': function() {
+        var expectedThis = {}, actualReadThis, actualWriteThis;
+        var instance = new ko.dependentObservable({
+            read: function() { actualReadThis = this },
+            write: function() { actualWriteThis = this }
+        }, expectedThis);
+
+        instance("force invocation of write");
+
+        value_of(actualReadThis).should_be(expectedThis);
+        value_of(actualWriteThis).should_be(expectedThis);
+    },
     
     'Should be able to pass evaluator function using "options" parameter called "read"': function() {
         var instance = new ko.dependentObservable({
@@ -129,6 +142,18 @@ describe('Dependent Observable', {
         value_of(notifiedValue).should_be(undefined);
         observable(2);
         value_of(notifiedValue).should_be(3);
+    },
+
+    'Should notify "beforeChange" subscribers before changes': function () {
+        var notifiedValue;
+        var observable = new ko.observable(1);
+        var depedentObservable = new ko.dependentObservable(function () { return observable() + 1; });
+        depedentObservable.subscribe(function (value) { notifiedValue = value; }, null, "beforeChange");
+
+        value_of(notifiedValue).should_be(undefined);
+        observable(2);
+        value_of(notifiedValue).should_be(2);
+        value_of(depedentObservable()).should_be(3);
     },
 
     'Should only update once when each dependency changes, even if evaluation calls the dependency multiple times': function () {

@@ -118,7 +118,7 @@
 
     ko.renderTemplateForEach = function (template, arrayOrObservableArray, options, targetNode, parentBindingContext) {   
         var createInnerBindingContext = function(arrayValue) {
-            return parentBindingContext.createChildContext(ko.utils.unwrapObservable(arrayValue));
+            return parentBindingContext['createChildContext'](ko.utils.unwrapObservable(arrayValue));
         };
 
         // This will be called whenever setDomNodeChildrenFromArrayMapping has added nodes to targetNode
@@ -186,17 +186,16 @@
             
             var templateSubscription = null;
             
-            if (typeof bindingValue['foreach'] != "undefined") {
+            if ((typeof bindingValue === 'object') && ('foreach' in bindingValue)) { // Note: can't use 'in' operator on strings
                 // Render once for each data point (treating data set as empty if shouldDisplay==false)
                 var dataArray = (shouldDisplay && bindingValue['foreach']) || [];
                 templateSubscription = ko.renderTemplateForEach(templateName || element, dataArray, /* options: */ bindingValue, element, bindingContext);
-            }
-            else {
+            } else {
                 if (shouldDisplay) {
                     // Render once for this single data point (or use the viewModel if no data was provided)
                     var innerBindingContext = (typeof bindingValue == 'object') && ('data' in bindingValue)
-                        ? bindingContext.createChildContext(ko.utils.unwrapObservable(bindingValue['data'])) // Given an explitit 'data' value, we create a child binding context for it
-                        : bindingContext;                                                                    // Given no explicit 'data' value, we retain the same binding context
+                        ? bindingContext['createChildContext'](ko.utils.unwrapObservable(bindingValue['data'])) // Given an explitit 'data' value, we create a child binding context for it
+                        : bindingContext;                                                                       // Given no explicit 'data' value, we retain the same binding context
                     templateSubscription = ko.renderTemplate(templateName || element, innerBindingContext, /* options: */ bindingValue, element);
                 } else
                     ko.virtualElements.emptyNode(element);
